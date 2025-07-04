@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Voting List{% endblock %}
+{% block content %}
+<h2>Available Votings</h2>
+<div class="voting-grid">
+    {% for voting in votings %}
+    <div class="voting-card" onclick="window.location='/voting_info/{{ voting.id }}'">
+        <h3>{{ voting.name }}</h3>
+        <p>Valid votes: {{ voting.votes | length }}</p>
+        <span class="status {{ 'open' if voting.status == 'Aberta' else 'closed' }}">{{ voting.status }}</span>
+    </div>
+    {% endfor %}
+</div>
+<button onclick="window.location='/create_voting'">Create New Voting</button>
+{% endblock %}

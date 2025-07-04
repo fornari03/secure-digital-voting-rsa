@@ -1,0 +1,58 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #E5FFF6;
+    font-family: Arial, sans-serif;
+}
+.container {
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+body, html {
+    height: 100%;
+    margin: 0;
+}
+
+input, button, select {
+    margin: 5px 0;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 300px;
+}
+button {
+    background-color: #32ADFA;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+.voting-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+.voting-card {
+    border: 2px solid #32FAC4;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: white;
+    cursor: pointer;
+}
+.status.open {
+    color: green;
+}
+.status.closed {
+    color: red;
+}
+.valid {
+    color: green;
+}
+.invalid {
+    color: red;
+}

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Create Voting{% endblock %}
+{% block content %}
+<h2>Create New Voting</h2>
+<form method="POST">
+    <input type="text" name="voting_name" placeholder="Voting Name" required><br>
+    <label><input type="checkbox" name="multiple_votes"> Allow multiple votes</label><br>
+    <label><input type="checkbox" name="anonymous"> Anonymous vote</label><br>
+    <label><input type="checkbox" name="is_private" id="is_private"> Private voting</label><br>
+
+    <input type="text" id="option_input" placeholder="Option">
+    <button type="button" onclick="addOption()">Add Option</button>
+    <ul id="options_list"></ul>
+
+    <div id="email_whitelist" style="display:none;">
+        <input type="email" id="email_input" placeholder="Permitted Email">
+        <button type="button" onclick="addEmail()">Add Email</button>
+        <ul id="emails_list"></ul>
+    </div>
+
+    <button type="submit">Publish Voting</button>
+</form>
+
+<script>
+let options = [];
+let emails = [];
+
+function addOption() {
+    const input = document.getElementById('option_input');
+    if (input.value.trim()) {
+        options.push(input.value);
+        let li = document.createElement('li');
+        li.textContent = input.value;
+        document.getElementById('options_list').appendChild(li);
+
+        let hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'options[]';
+        hidden.value = input.value;
+        document.forms[0].appendChild(hidden);
+        input.value = '';
+    }
+}
+
+function addEmail() {
+    const input = document.getElementById('email_input');
+    if (input.value.trim()) {
+        emails.push(input.value);
+        let li = document.createElement('li');
+        li.textContent = input.value;
+        document.getElementById('emails_list').appendChild(li);
+
+        let hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'emails[]';
+        hidden.value = input.value;
+        document.forms[0].appendChild(hidden);
+        input.value = '';
+    }
+}
+
+document.getElementById('is_private').addEventListener('change', function() {
+    document.getElementById('email_whitelist').style.display = this.checked ? 'block' : 'none';
+});
+</script>
+{% endblock %}

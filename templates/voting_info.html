@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Voting Info{% endblock %}
+{% block content %}
+<h2>{{ voting.name }}</h2>
+{% if not authorized %}
+<p>You are not allowed to view this private voting.</p>
+{% else %}
+<ul>
+{% for vote in votes %}
+    <li>{{ vote.voter }} - <span class="{{ 'valid' if vote.valid else 'invalid' }}">{{ 'Valid' if vote.valid else 'Invalid' }}</span>
+        {% if not voting.anonymous %}- {{ vote.choice }}{% endif %}</li>
+{% endfor %}
+</ul>
+
+{% if voting.status == 'Aberta' %}
+<form method="POST" enctype="multipart/form-data">
+    <select name="choice" required>
+        {% for option in voting.options %}
+        <option value="{{ option }}">{{ option }}</option>
+        {% endfor %}
+    </select><br>
+    <input type="file" name="private_key_file" required><br>
+    <button type="submit">Vote</button>
+</form>
+<form method="POST" action="/voting_info/{{ voting.id }}/close">
+    <button type="submit">Close Voting</button>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}
