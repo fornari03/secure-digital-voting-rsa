@@ -91,6 +91,7 @@ def voting_info(voting_id):
     
     voting = get_voting_by_id(voting_id)
     votes = list_votes_by_voting_id(voting_id)
+    voting['options'] = voting['options'].split(',') # HACK: it's a string in the database, so we need to convert it to a list
     authorized = not voting['is_private'] or session['user'] in voting['whitelist']
     # TODO: verify with JWT if the user is authorized to vote
     if not authorized:
