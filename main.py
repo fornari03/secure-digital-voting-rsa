@@ -3,7 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 
 from app.auth import *
-from app.database import get_votings, add_voting, close_voting_by_id, get_voting_by_id
+from app.repository import get_votings, add_voting, close_voting_by_id, get_voting_by_id, get_user_by_email, add_vote, list_votes_by_voting_id
 
 app = Flask(__name__)
 app.secret_key = 'testsecretkey'
@@ -38,7 +38,7 @@ def register():
         password = request.form['password']
 
         # register user
-        if register_user(name, email, password):
+        if register_user(name, email, password, public_key="mock_public_key"):
             # TODO: generate key pair and store the public key in the database and download the private key to the user
             flash('Account created. Key pair generated.')
             return redirect(url_for('login'))
@@ -53,7 +53,12 @@ def voting_list():
     if 'user' not in session:
         return redirect(url_for('login'))
     
-    return render_template('voting_list.html', votings=get_votings())
+    votings_list = get_votings()
+    # add votes count to each voting
+    for voting in votings_list:
+        voting['votes'] = list_votes_by_voting_id(voting['id'])
+    
+    return render_template('voting_list.html', votings=votings_list)
 
 
 @app.route('/create_voting', methods=['GET', 'POST'])
@@ -63,16 +68,14 @@ def create_voting():
     
     if request.method == 'POST':
         voting = {
-            'id': len(get_votings()), # TODO: better ID generation (in database)
             'name': request.form['voting_name'],
             'multiple_votes': 'multiple_votes' in request.form,
             'anonymous': 'anonymous' in request.form,
             'is_private': 'is_private' in request.form,
             'options': request.form.getlist('options[]'),
-            'whitelist': request.form.getlist('emails[]'),  
-            'votes': [],
+            'whitelist': request.form.getlist('emails[]'),
             'status': 'Aberta',
-            'creator': session['user']
+            'creator': get_user_by_email(session['user'])['id']  # TODO: use JWT to get user info
         }
         add_voting(voting)
         return redirect(url_for('voting_list'))
@@ -87,24 +90,28 @@ def voting_info(voting_id):
         return redirect(url_for('login'))
     
     voting = get_voting_by_id(voting_id)
+    votes = list_votes_by_voting_id(voting_id)
     authorized = not voting['is_private'] or session['user'] in voting['whitelist']
-    # TODO: verificar com o JWT se o usuário está autorizado a votar
+    # TODO: verify with JWT if the user is authorized to vote
     if not authorized:
-        return render_template('voting_info.html', voting=voting, votes=[], authorized=False)
+        return render_template('voting_info.html', voting=voting, votes=votes, authorized=False)
 
+    # if the voting is not closed
     if request.method == 'POST':
         choice = request.form['choice']
         file = request.files['private_key_file']
         filename = secure_filename(file.filename)
         # TODO: get the content of the private key file
+        # TODO: hash the vote
+        # TODO: sign the hashed vote with the private key
+        # TODO: delete the private key variables for preventing memory leaks
         vote = {
             'voter': session['user'],
             'choice': choice,
-            'valid': True  # TODO: verify validity of the vote using the private key
         }
-        voting['votes'].append(vote)
+        add_vote(vote.__hash__, voting['id'])
 
-    return render_template('voting_info.html', voting=voting, votes=voting['votes'], authorized=True)
+    return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
 
 
 @app.route('/voting_info/<int:voting_id>/close', methods=['POST'])
@@ -112,14 +119,16 @@ def close_voting(voting_id):
     if 'user' not in session:
         return redirect(url_for('login'))
     
-    # TODO: verificar com o JWT se o usuário é o criador do voto
-    if session['user'] == get_voting_by_id(voting_id)['creator']:
-        print(f"User {session['user']} is not authorized to close this voting {voting_id}")
+    # TODO: verify if the user is the creator of the voting
+    if get_user_by_email(session['user'])['id'] == get_voting_by_id(voting_id)['creator']:
         close_voting_by_id(voting_id)
+        flash('Votação encerrada com sucesso.')
         return redirect(url_for('voting_info', voting_id=voting_id))
+    
     flash('You are not authorized to close this voting.')
     return redirect(url_for('voting_info', voting_id=voting_id))
 
+
+
 if __name__ == '__main__':
-    os.makedirs('uploads', exist_ok=True)
     app.run(debug=True)

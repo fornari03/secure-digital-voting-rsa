@@ -6,7 +6,7 @@
     {% for voting in votings %}
     <div class="voting-card" onclick="window.location='/voting_info/{{ voting.id }}'">
         <h3>{{ voting.name }}</h3>
-        <p>Votos válidos: {{ voting.votes | length }}</p>
+        <p>Votos totais: {{ voting.votes | length }}</p>
         <span class="status {{ 'open' if voting.status == 'Aberta' else 'closed' }}">{{ voting.status }}</span>
     </div>
     {% endfor %}
