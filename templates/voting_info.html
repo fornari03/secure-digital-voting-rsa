@@ -6,13 +6,27 @@
 <p>You are not allowed to view this private voting.</p>
 {% else %}
 <ul>
+{% if voting.status == 'Encerrada' %}
+<h3>Resultado</h3>
+<ol>
+{% set ranking = {} %}
 {% for vote in votes %}
-    <li>{{ vote.voter }} - <span class="{{ 'valid' if vote.valid else 'invalid' }}">{{ 'Valid' if vote.valid else 'Invalid' }}</span>
+    {% if vote.valid %}
+        {% set _ = ranking.update({vote.choice: ranking.get(vote.choice, 0) + 1}) %}
+    {% endif %}
+{% endfor %}
+{% for candidate, count in ranking|dictsort(by='value', reverse=True) %}
+    <li>{{ candidate }} - {{ count }} voto{{ 's' if count != 1 else '' }}</li>
+{% endfor %}
+</ol>
+<ul>
+{% for vote in votes %}
+    <li>{{ vote.voter }} - <span class="{{ 'valid' if vote.valid else 'invalid' }}">{{ 'Válido' if vote.valid else 'Inválido' }}</span>
         {% if not voting.anonymous %}- {{ vote.choice }}{% endif %}</li>
 {% endfor %}
 </ul>
 
-{% if voting.status == 'Aberta' %}
+{% else %}
 <form method="POST" enctype="multipart/form-data">
     <select name="choice" required>
         {% for option in voting.options %}
@@ -20,10 +34,10 @@
         {% endfor %}
     </select><br>
     <input type="file" name="private_key_file" required><br>
-    <button type="submit">Vote</button>
+    <button type="submit">Votar</button>
 </form>
 <form method="POST" action="/voting_info/{{ voting.id }}/close">
-    <button type="submit">Close Voting</button>
+    <button type="submit">Encerrar votação</button>
 </form>
 {% endif %}
 {% endif %}

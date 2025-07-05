@@ -1,24 +1,24 @@
 {% extends 'base.html' %}
 {% block title %}Create Voting{% endblock %}
 {% block content %}
-<h2>Create New Voting</h2>
+<h2>Criar nova Votação</h2>
 <form method="POST">
-    <input type="text" name="voting_name" placeholder="Voting Name" required><br>
-    <label><input type="checkbox" name="multiple_votes"> Allow multiple votes</label><br>
-    <label><input type="checkbox" name="anonymous"> Anonymous vote</label><br>
-    <label><input type="checkbox" name="is_private" id="is_private"> Private voting</label><br>
+    <input type="text" name="voting_name" placeholder="Nome da Votação" required><br>
+    <label><input type="checkbox" name="multiple_votes"> Permitir múltiplos votos</label><br>
+    <label><input type="checkbox" name="anonymous"> Voto anônimo</label><br>
+    <label><input type="checkbox" name="is_private" id="is_private"> Votação privada</label><br>
 
-    <input type="text" id="option_input" placeholder="Option">
-    <button type="button" onclick="addOption()">Add Option</button>
+    <input type="text" id="option_input" placeholder="Candidato">
+    <button type="button" onclick="addOption()">Adicionar candidato</button>
     <ul id="options_list"></ul>
 
     <div id="email_whitelist" style="display:none;">
-        <input type="email" id="email_input" placeholder="Permitted Email">
-        <button type="button" onclick="addEmail()">Add Email</button>
+        <input type="email" id="email_input" placeholder="Email permitido">
+        <button type="button" onclick="addEmail()">Adicionar eleitor</button>
         <ul id="emails_list"></ul>
     </div>
 
-    <button type="submit">Publish Voting</button>
+    <button type="submit">Publicar Votação</button>
 </form>
 
 <script>
