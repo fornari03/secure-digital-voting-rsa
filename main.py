@@ -3,7 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 
 from app.auth import *
-from app.repository import get_votings, add_voting, close_voting_by_id, get_voting_by_id, get_user_by_email, add_vote, list_votes_by_voting_id
+from app.repository import get_votings, add_voting, close_voting_by_id, get_voting_by_id, get_user_by_email, get_user_by_id, add_vote, list_votes_by_voting_id
 
 app = Flask(__name__)
 app.secret_key = 'testsecretkey'
@@ -97,21 +97,31 @@ def voting_info(voting_id):
         return render_template('voting_info.html', voting=voting, votes=votes, authorized=False)
 
     # if the voting is not closed
-    if request.method == 'POST':
-        choice = request.form['choice']
-        file = request.files['private_key_file']
-        filename = secure_filename(file.filename)
-        # TODO: get the content of the private key file
-        # TODO: hash the vote
-        # TODO: sign the hashed vote with the private key
-        # TODO: delete the private key variables for preventing memory leaks
-        vote = {
-            'voter': session['user'],
-            'choice': choice,
-        }
-        add_vote(vote.__hash__, voting['id'])
-
+    if voting['status'] == 'Aberta':
+        if request.method == 'POST':
+            choice = request.form['choice']
+            file = request.files['private_key_file']
+            filename = secure_filename(file.filename)
+            # TODO: get the content of the private key file
+            # TODO: hash the vote
+            # TODO: sign the hashed vote with the private key
+            # TODO: delete the private key variables for preventing memory leaks
+            vote = {
+                'voter': session['user'],
+                'choice': choice,
+            }
+            # TODO: use the actual signed vote instead of this mock
+            add_vote(vote.__hash__, vote['choice'], get_user_by_email(session['user'])['id'], voting['id'])
+        return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
+    
+    # if the voting is closed, show the results
+    for vote in votes:
+        # TODO: verify if the vote is valid using the public key and testing the hash
+        vote['valid'] = True  # mock validation
+        vote['voter'] = get_user_by_id(vote['voter'])['email']
     return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
+
+
 
 
 @app.route('/voting_info/<int:voting_id>/close', methods=['POST'])

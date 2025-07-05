@@ -45,7 +45,10 @@ def init_db():
         CREATE TABLE IF NOT EXISTS votes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             signed_vote TEXT,
+            choice TEXT NOT NULL,
+            voter INTEGER NOT NULL,
             voting INTEGER NOT NULL,
+            FOREIGN KEY (voter) REFERENCES users(id),
             FOREIGN KEY (voting) REFERENCES voting(id)
         )
         ''')
@@ -105,6 +108,20 @@ def get_user_by_email(email):
     return dict(zip([column[0] for column in cursor.description], user))
 
 
+def get_user_by_id(user_id):
+    conn = sqlite3.connect(USERS_DATABASE)
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if not user:
+        return None
+    
+    return dict(zip([column[0] for column in cursor.description], user))
+
+
 def get_votings():
     conn = sqlite3.connect(VOTINGS_DATABASE)
     cursor = conn.cursor()
@@ -138,14 +155,14 @@ def add_voting(voting):
     conn.close()
 
 
-def add_vote(signed_vote, voting_id):
+def add_vote(signed_vote, choice, voter, voting_id):
     conn = sqlite3.connect(VOTES_DATABASE)
     cursor = conn.cursor()
 
     cursor.execute('''
-    INSERT INTO votes (signed_vote, voting)
-    VALUES (?, ?)
-    ''', (signed_vote, voting_id
+    INSERT INTO votes (signed_vote, choice, voter, voting)
+    VALUES (?, ?, ?, ?)
+    ''', (signed_vote, choice, voter, voting_id
     ))
 
     conn.commit()
@@ -181,7 +198,7 @@ def close_voting_by_id(voting_id):
     conn = sqlite3.connect(VOTINGS_DATABASE)
     cursor = conn.cursor()
     
-    cursor.execute('UPDATE votings SET status = ? WHERE id = ?', ('Fechada', voting_id))
+    cursor.execute('UPDATE votings SET status = ? WHERE id = ?', ('Encerrada', voting_id))
     conn.commit()
     conn.close()
 

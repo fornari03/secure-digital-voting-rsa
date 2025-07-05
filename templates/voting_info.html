@@ -3,11 +3,11 @@
 {% block content %}
 <h2>{{ voting.name }}</h2>
 {% if not authorized %}
-<p>You are not allowed to view this private voting.</p>
+<p>Você não está autorizado a ver essa votação privada.</p>
 {% else %}
 <ul>
 {% if voting.status == 'Encerrada' %}
-<h3>Resultado</h3>
+<h3>Resultado da Votação</h3>
 <ol>
 {% set ranking = {} %}
 {% for vote in votes %}
@@ -19,6 +19,8 @@
     <li>{{ candidate }} - {{ count }} voto{{ 's' if count != 1 else '' }}</li>
 {% endfor %}
 </ol>
+<br>
+<h3>Votos</h3>
 <ul>
 {% for vote in votes %}
     <li>{{ vote.voter }} - <span class="{{ 'valid' if vote.valid else 'invalid' }}">{{ 'Válido' if vote.valid else 'Inválido' }}</span>
