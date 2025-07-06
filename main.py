@@ -96,7 +96,7 @@ def create_voting():
             'anonymous': 'anonymous' in request.form,
             'is_private': 'is_private' in request.form,
             'options': request.form.getlist('options[]'),
-            'whitelist': request.form.getlist('emails[]'),
+            'whitelist': [session['user']] + request.form.getlist('emails[]'),
             'status': 'Aberta',
             'creator': get_user_by_email(session['user'])['id']  # TODO: use JWT to get user info
         }
