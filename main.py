@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
 from werkzeug.utils import secure_filename
 import os
 
 from app.auth import *
 from app.repository import get_votings, add_voting, close_voting_by_id, get_voting_by_id, get_user_by_email, get_user_by_id, add_vote, list_votes_by_voting_id
+from app.crypto import generate_rsa_key_pair, sign_vote, verify_signature, generate_jwt, verify_jwt, get_jti
 
 app = Flask(__name__)
 app.secret_key = 'testsecretkey'
@@ -30,6 +31,9 @@ def login():
     return render_template('login.html')
 
 
+# @app.route('/logout')
+# TODO: implement logout functionality
+
 @app.route('/register', methods=['GET', 'POST'])
 def register(): 
     if request.method == 'POST':
@@ -38,14 +42,33 @@ def register():
         password = request.form['password']
 
         # register user
-        if register_user(name, email, password, public_key="mock_public_key"):
-            # TODO: generate key pair and store the public key in the database and download the private key to the user
-            flash('Account created. Key pair generated.')
-            return redirect(url_for('login'))
-        flash('Email already registered')
+        if not get_user_by_email(email):
+            private_key, public_key = generate_rsa_key_pair()
+            register_user(name, email, password, public_key)
+            session['private_key'] = private_key.decode('utf-8')
+            flash('Conta criada com sucesso!')
+            return redirect(url_for('download_private_key'))
+
+        flash('Email já cadastrado.')
     
     # GET
-    return render_template('register.html')
+    return render_template('register.html') 
+
+
+@app.route('/download_private_key', methods=['GET'])
+def download_private_key():
+    if 'private_key' not in session:
+        return redirect(url_for('login'))
+    
+    private_key = session.pop('private_key')
+
+    return Response(
+        private_key,
+        mimetype='application/octet-stream',
+        headers={
+            'Content-Disposition': f'attachment; filename=private_key.pem'
+        }
+    )
 
 
 @app.route('/voting_list', methods=['GET'])
