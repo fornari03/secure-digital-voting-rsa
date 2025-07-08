@@ -1,4 +1,15 @@
 #!/bin/bash
+# Create virtual environment if it doesn't exist
+if [ ! -d "env" ]; then
+  python3 -m venv env
+fi
+
+# Activate virtual environment
+source env/bin/activate
+
+# Install requirements
+pip install -r requirements.txt
+
 
 # Set filenames
 CERT_FILE="cert.pem"
@@ -16,3 +27,7 @@ else
     -subj "/CN=localhost" 2>/dev/null
   echo "Certificate generated: $CERT_FILE and $KEY_FILE"
 fi
+
+echo ""
+echo "To activate the virtual environment in your terminal, run:"
+echo "source env/bin/activate"
