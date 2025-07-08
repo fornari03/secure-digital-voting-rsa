@@ -3,7 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 
 from app.auth import *
-from app.repository import get_votings, add_voting, close_voting_by_id, get_voting_by_id, get_user_by_email, get_user_by_id, add_vote, list_votes_by_voting_id
+from app.repository import get_votings, add_voting, close_voting_by_id, get_voting_by_id, get_user_by_email, get_user_by_id, add_vote, list_votes_by_voting_id, add_jti_to_blacklist
 from app.crypto import generate_rsa_key_pair, sign_vote, verify_signature, generate_jwt, verify_jwt, get_jti
 
 app = Flask(__name__)
@@ -22,9 +22,10 @@ def login():
         password = request.form['password']
 
         if auth_user(email, password):
-            session['user'] = email
-            # TODO: store jwt token in session
-            return redirect(url_for('voting_list'))
+            response = redirect(url_for('voting_list'))
+            token = generate_jwt(get_user_by_email(email)['id'])
+            response.set_cookie('jwt', token, httponly=True, secure=True)
+            return response
         flash('Credenciais inválidas.', 'warning')
 
     # GET
@@ -34,7 +35,10 @@ def login():
 @app.route('/logout')
 def logout():
     session.clear()
-    # TODO: invalidate JWT token, storing JTI in a blacklist
+    token = request.cookies.get('jwt')
+    jti = get_jti(token)
+    if jti is not None:
+        add_jti_to_blacklist(jti)
     flash('Você saiu da conta com sucesso.', 'info')
     return redirect(url_for('login'))
 
@@ -78,8 +82,10 @@ def download_private_key():
 
 @app.route('/voting_list', methods=['GET'])
 def voting_list():
-    if 'user' not in session:
+    token = request.cookies.get('jwt')
+    if not token:
         return redirect(url_for('login'))
+
     
     votings_list = get_votings()
     # add votes count to each voting
@@ -91,7 +97,8 @@ def voting_list():
 
 @app.route('/create_voting', methods=['GET', 'POST'])
 def create_voting():
-    if 'user' not in session:
+    token = request.cookies.get('jwt')
+    if not token:
         return redirect(url_for('login'))
     
     if request.method == 'POST':
@@ -115,7 +122,8 @@ def create_voting():
 
 @app.route('/voting_info/<int:voting_id>', methods=['GET', 'POST'])
 def voting_info(voting_id):
-    if 'user' not in session:
+    token = request.cookies.get('jwt')
+    if not token:
         return redirect(url_for('login'))
     
     voting = get_voting_by_id(voting_id)
@@ -148,7 +156,7 @@ def voting_info(voting_id):
             del file  # remove file from memory
 
             if signed_vote == False:
-                flash('Formato inválido da chave privada.')
+                flash('Formato inválido da chave privada.', 'danger')
             else:
                 add_vote(signed_vote, vote_data['choice'], user_id, voting['id'])
         return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
@@ -171,7 +179,8 @@ def voting_info(voting_id):
 
 @app.route('/voting_info/<int:voting_id>/close', methods=['POST'])
 def close_voting(voting_id):
-    if 'user' not in session:
+    token = request.cookies.get('jwt')
+    if not token:
         return redirect(url_for('login'))
     
     # TODO: verify if the user is the creator of the voting
