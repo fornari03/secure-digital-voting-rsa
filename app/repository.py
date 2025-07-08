@@ -4,6 +4,7 @@ import sqlite3, os, bcrypt
 USERS_DATABASE = 'users.db'
 VOTINGS_DATABASE = 'votings.db'
 VOTES_DATABASE = 'votes.db'
+BLACKLIST_DATABASE = 'blacklist.db'
 
 
 # create the database and tables if they do not exist
@@ -50,6 +51,15 @@ def init_db():
             voting INTEGER NOT NULL,
             FOREIGN KEY (voter) REFERENCES users(id),
             FOREIGN KEY (voting) REFERENCES voting(id)
+        )
+        ''')
+        conn.commit()
+
+    with sqlite3.connect(BLACKLIST_DATABASE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS blacklist (
+            jti TEXT PRIMARY KEY
         )
         ''')
         conn.commit()
@@ -202,5 +212,25 @@ def close_voting_by_id(voting_id):
     conn.commit()
     conn.close()
 
+
+def add_jti_to_blacklist(jti):
+    # add a JTI (JWT ID) to the blacklist
+    try:
+        with sqlite3.connect(BLACKLIST_DATABASE) as conn:
+            cursor = conn.cursor()
+            cursor.execute('INSERT INTO blacklist (jti) VALUES (?)', (jti,))
+            conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        # jti already in the blacklist
+        return False
+
+
+def is_blacklisted(jti):
+    # check if a JTI is in the blacklist
+    with sqlite3.connect(BLACKLIST_DATABASE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT 1 FROM blacklist WHERE jti = ? LIMIT 1', (jti,))
+        return cursor.fetchone() is not None
 
 init_db()
