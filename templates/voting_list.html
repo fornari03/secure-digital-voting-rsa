@@ -1,15 +1,32 @@
 {% extends 'base.html' %}
-{% block title %}Voting List{% endblock %}
+
+{% block title %}Votações Disponíveis{% endblock %}
+
 {% block content %}
-<h2>Votações Disponíveis</h2>
-<div class="voting-grid">
+<div class="container py-5">
+  <h2 class="text-center mb-4">Votações Disponíveis</h2>
+
+  <div class="voting-grid">
     {% for voting in votings %}
     <div class="voting-card" onclick="window.location='/voting_info/{{ voting.id }}'">
-        <h3>{{ voting.name }}</h3>
-        <p>Votos totais: {{ voting.votes | length }}</p>
-        <span class="status {{ 'open' if voting.status == 'Aberta' else 'closed' }}">{{ voting.status }}</span>
+      <h4 class="mb-2">{{ voting.name }}</h4>
+      <p class="mb-1">Votos totais: {{ voting.votes | length }}</p>
+      <span class="status {{ 'open' if voting.status == 'Aberta' else 'closed' }}">{{ voting.status }}</span>
     </div>
     {% endfor %}
+  </div>
+
+  <div class="text-center mt-5">
+    
+    <button onclick="window.location='/create_voting'" class="btn-create mb-3">
+      Criar nova Votação
+    </button>
+
+    <div style="height: 80px;"></div>
+    
+    <a href="{{ url_for('logout') }}" class="btn-logout">
+       Logout
+    </a>
+  </div>
 </div>
-<button onclick="window.location='/create_voting'">Criar nova Votação</button>
 {% endblock %}

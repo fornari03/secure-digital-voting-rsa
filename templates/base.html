@@ -4,26 +4,38 @@
     <meta charset="UTF-8">
     <title>{% block title %}Secure Voting{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <!-- Bootstrap CSS -->
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-
 </head>
 <body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="position-fixed top-0 start-50 translate-middle-x mt-3 z-3" style="min-width: 300px;">
+          {% for category, message in messages %}
+            <div id="alerta-msg" class="alert alert-{{ category }} alert-dismissible fade show text-center" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+        <script>
+          setTimeout(() => {
+            const alert = document.getElementById('alerta-msg');
+            if (alert) {
+              alert.classList.remove('show');
+              alert.classList.add('fade');
+              setTimeout(() => alert.remove(), 500);
+            }
+          }, 3000);
+        </script>
+      {% endif %}
+    {% endwith %}
+
     <div class="container">
         {% block content %}{% endblock %}
     </div>
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        {% for message in messages %}
-          <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
+
 </body>
 </html>

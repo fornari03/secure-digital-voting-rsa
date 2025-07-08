@@ -1,46 +1,79 @@
 {% extends 'base.html' %}
-{% block title %}Voting Info{% endblock %}
-{% block content %}
-<h2>{{ voting.name }}</h2>
-{% if not authorized %}
-<p>Você não está autorizado a ver essa votação privada.</p>
-{% else %}
-<ul>
-{% if voting.status == 'Encerrada' %}
-<h3>Resultado da Votação</h3>
-<ol>
-{% set ranking = {} %}
-{% for vote in votes %}
-    {% if vote.valid %}
-        {% set _ = ranking.update({vote.choice: ranking.get(vote.choice, 0) + 1}) %}
-    {% endif %}
-{% endfor %}
-{% for candidate, count in ranking|dictsort(by='value', reverse=True) %}
-    <li>{{ candidate }} - {{ count }} voto{{ 's' if count != 1 else '' }}</li>
-{% endfor %}
-</ol>
-<br>
-<h3>Votos</h3>
-<ul>
-{% for vote in votes %}
-    <li>{{ vote.voter }} - <span class="{{ 'valid' if vote.valid else 'invalid' }}">{{ 'Válido' if vote.valid else 'Inválido' }}</span>
-        {% if not voting.anonymous %}- {{ vote.choice }}{% endif %}</li>
-{% endfor %}
-</ul>
 
-{% else %}
-<form method="POST" enctype="multipart/form-data">
-    <select name="choice" required>
-        {% for option in voting.options %}
-        <option value="{{ option }}">{{ option }}</option>
-        {% endfor %}
-    </select><br>
-    <input type="file" name="private_key_file" required><br>
-    <button type="submit">Votar</button>
-</form>
-<form method="POST" action="/voting_info/{{ voting.id }}/close">
-    <button type="submit">Encerrar votação</button>
-</form>
-{% endif %}
-{% endif %}
+{% block title %}Detalhes da Votação{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center py-5">
+  <div class="w-100" style="max-width: 700px;">
+
+    <a href="/voting_list" class="btn-create" style="width: auto; margin-bottom: 20px;">
+      ⬅ Voltar
+    </a>
+
+    <div class="card shadow p-5">
+      <h2 class="text-center mb-4">{{ voting.name }}</h2>
+
+      {% if not authorized %}
+        <div class="alert alert-warning text-center" role="alert">
+          Você não está autorizado a ver essa votação privada.
+        </div>
+
+      {% else %}
+        {% if voting.status == 'Encerrada' %}
+          <div class="mb-4">
+            <h4 class="mb-3">Resultado da Votação</h4>
+            <ol class="ps-3">
+              {% set ranking = {} %}
+              {% for vote in votes %}
+                {% if vote.valid %}
+                  {% set _ = ranking.update({vote.choice: ranking.get(vote.choice, 0) + 1}) %}
+                {% endif %}
+              {% endfor %}
+              {% for candidate, count in ranking|dictsort(by='value', reverse=True) %}
+                <li>{{ candidate }} - {{ count }} voto{{ 's' if count != 1 else '' }}</li>
+              {% endfor %}
+            </ol>
+          </div>
+
+          <div class="mb-4">
+            <h4 class="mb-3">Votos</h4>
+            <ul class="ps-3">
+              {% for vote in votes %}
+                <li>
+                  {{ vote.voter }} - 
+                  <span class="{{ 'valid' if vote.valid else 'invalid' }}">
+                    {{ 'Válido' if vote.valid else 'Inválido' }}
+                  </span>
+                  {% if not voting.anonymous %} - {{ vote.choice }}{% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+
+        {% else %}
+          <form method="POST" enctype="multipart/form-data" class="mb-4">
+            <div class="mb-3">
+              <select name="choice" class="form-control" required>
+                {% for option in voting.options %}
+                  <option value="{{ option }}">{{ option }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <input type="file" id="private_key_file" name="private_key_file" class="form-control" required>
+              <label for="private_key_file" class="form-label">Faça upload da sua chave privada</label>
+            </div>
+
+            <button type="submit" class="btn-create w-100">Votar</button>
+          </form>
+
+          <form method="POST" action="/voting_info/{{ voting.id }}/close">
+            <button type="submit" class="btn-create w-100">Encerrar votação</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
 {% endblock %}

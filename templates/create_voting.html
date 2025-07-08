@@ -1,25 +1,52 @@
 {% extends 'base.html' %}
-{% block title %}Create Voting{% endblock %}
+
+{% block title %}Criar Votação{% endblock %}
+
 {% block content %}
-<h2>Criar nova Votação</h2>
-<form method="POST">
-    <input type="text" name="voting_name" placeholder="Nome da Votação" required><br>
-    <label><input type="checkbox" name="multiple_votes"> Permitir múltiplos votos</label><br>
-    <label><input type="checkbox" name="anonymous"> Voto anônimo</label><br>
-    <label><input type="checkbox" name="is_private" id="is_private"> Votação privada</label><br>
+<div class="d-flex justify-content-center align-items-center vh-100">
+  <div class="card shadow p-5" style="width: 100%; max-width: 600px;">
+    <h2 class="text-center mb-4">Criar nova Votação</h2>
 
-    <input type="text" id="option_input" placeholder="Candidato">
-    <button type="button" onclick="addOption()">Adicionar candidato</button>
-    <ul id="options_list"></ul>
+    <form method="POST">
+      <div class="mb-3">
+        <input type="text" name="voting_name" class="form-control" placeholder="Nome da Votação" required>
+      </div>
 
-    <div id="email_whitelist" style="display:none;">
-        <input type="email" id="email_input" placeholder="Email permitido">
-        <button type="button" onclick="addEmail()">Adicionar eleitor</button>
-        <ul id="emails_list"></ul>
-    </div>
+      <div class="form-check mb-2">
+        <input type="checkbox" class="form-check-input" name="multiple_votes" id="multiple_votes">
+        <label for="multiple_votes" class="form-check-label">Permitir múltiplos votos</label>
+      </div>
 
-    <button type="submit">Publicar Votação</button>
-</form>
+      <div class="form-check mb-2">
+        <input type="checkbox" class="form-check-input" name="anonymous" id="anonymous">
+        <label for="anonymous" class="form-check-label">Voto anônimo</label>
+      </div>
+
+      <div class="form-check mb-3">
+        <input type="checkbox" class="form-check-input" name="is_private" id="is_private">
+        <label for="is_private" class="form-check-label">Votação privada</label>
+      </div>
+
+      <div class="mb-3 d-flex gap-2">
+        <input type="text" id="option_input" class="form-control" placeholder="Candidato">
+        <button type="button" onclick="addOption()" class="btn-create">Adicionar candidato</button>
+      </div>
+      <ul id="options_list" class="mb-4"></ul>
+
+      <div id="email_whitelist" style="display:none;">
+        <div class="mb-3 d-flex gap-2">
+          <input type="email" id="email_input" class="form-control" placeholder="Email permitido">
+          <button type="button" onclick="addEmail()" class="btn-create">Adicionar eleitor</button>
+        </div>
+        <ul id="emails_list" class="mb-4"></ul>
+      </div>
+
+      <div class="text-center">
+        <button type="submit" class="btn-create w-100">Publicar Votação</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script>
 let options = [];

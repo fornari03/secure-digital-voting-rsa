@@ -25,14 +25,19 @@ def login():
             session['user'] = email
             # TODO: store jwt token in session
             return redirect(url_for('voting_list'))
-        flash('Invalid credentials')
+        flash('Credenciais inválidas.', 'warning')
 
     # GET
     return render_template('login.html')
 
 
-# @app.route('/logout')
-# TODO: implement logout functionality
+@app.route('/logout')
+def logout():
+    session.clear()
+    # TODO: invalidate JWT token, storing JTI in a blacklist
+    flash('Você saiu da conta com sucesso.', 'info')
+    return redirect(url_for('login'))
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register(): 
@@ -46,10 +51,10 @@ def register():
             private_key, public_key = generate_rsa_key_pair()
             register_user(name, email, password, public_key)
             session['private_key'] = private_key.decode('utf-8')
-            flash('Conta criada com sucesso!')
+            flash('Conta criada com sucesso!', 'success')
             return redirect(url_for('download_private_key'))
 
-        flash('Email já cadastrado.')
+        flash('Email já cadastrado.', 'danger')
     
     # GET
     return render_template('register.html') 
@@ -101,6 +106,7 @@ def create_voting():
             'creator': get_user_by_email(session['user'])['id']  # TODO: use JWT to get user info
         }
         add_voting(voting)
+        flash('Votação criada com sucesso!', 'success')
         return redirect(url_for('voting_list'))
     
     # GET
@@ -118,6 +124,7 @@ def voting_info(voting_id):
     authorized = not voting['is_private'] or session['user'] in voting['whitelist']
     # TODO: verify with JWT if the user is authorized to vote
     if not authorized:
+        flash('Você não está autorizado a ver essa votação privada.', 'warning')
         return render_template('voting_info.html', voting=voting, votes=votes, authorized=False)
 
     # if the voting is not closed
@@ -136,6 +143,7 @@ def voting_info(voting_id):
             }
             # TODO: use the actual signed vote instead of this mock
             add_vote(vote.__hash__, vote['choice'], get_user_by_email(session['user'])['id'], voting['id'])
+            flash('Voto registrado com sucesso!', 'success')
         return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
     
     # if the voting is closed, show the results
@@ -146,8 +154,6 @@ def voting_info(voting_id):
     return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
 
 
-
-
 @app.route('/voting_info/<int:voting_id>/close', methods=['POST'])
 def close_voting(voting_id):
     if 'user' not in session:
@@ -156,12 +162,11 @@ def close_voting(voting_id):
     # TODO: verify if the user is the creator of the voting
     if get_user_by_email(session['user'])['id'] == get_voting_by_id(voting_id)['creator']:
         close_voting_by_id(voting_id)
-        flash('Votação encerrada com sucesso.')
+        flash('Votação encerrada com sucesso.', 'success')
         return redirect(url_for('voting_info', voting_id=voting_id))
     
-    flash('You are not authorized to close this voting.')
+    flash('Você não tem permissão para encerrar esta votação.', 'danger')
     return redirect(url_for('voting_info', voting_id=voting_id))
-
 
 
 if __name__ == '__main__':
