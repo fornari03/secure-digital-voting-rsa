@@ -3,6 +3,8 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
+import jwt, time, os
+
 
 def generate_rsa_key_pair():
     # generate a new RSA private key
@@ -44,6 +46,7 @@ def sign_vote(private_key_content, vote_data):
 
     return signed_vote
 
+
 def verify_signature(signed_data, public_key_content, original_vote_data):
     public_key = serialization.load_pem_public_key(public_key_content)
     try:
@@ -58,14 +61,41 @@ def verify_signature(signed_data, public_key_content, original_vote_data):
         return False
 
 
+
+HMAC_SECRET = open("hmac_key.pem", "rb").read()
+JWT_EXPIRATION = 1800
+
 def generate_jwt(user_id):
-    # TODO: implement JWT generation logic
-    pass
+    # generates the payload for the JWT with the user_id claim
+    payload = {
+        "sub": user_id,
+        "iat": int(time.time()),
+        "exp": int(time.time()) + JWT_EXPIRATION,
+        "jti": str(os.urandom(16).hex()),
+    }
+
+    # signs the JWT with the HMAC secret
+    token = jwt.encode(payload, HMAC_SECRET, algorithm="HS256")
+        
+    return token
+
 
 def verify_jwt(token):
-    # TODO: implement JWT verification logic
-    pass
+    # checks if the token is valid and returns the payload if it is, otherwise returns None
+    try:
+        payload = jwt.decode(token, HMAC_SECRET, algorithms=["HS256"])
+        return payload
+    
+    except jwt.ExpiredSignatureError:
+        return None
+    
+    except jwt.InvalidTokenError:
+        return None
+
 
 def get_jti(token):
-    # TODO: implement logic to extract JTI from JWT
-    pass
+    # returns the JTI (JWT ID) from the token if it is valid, otherwise returns None
+    payload = verify_jwt(token)
+    if payload is None:
+        return None
+    return payload.get('jti')
