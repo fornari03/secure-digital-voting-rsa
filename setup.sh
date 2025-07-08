@@ -28,6 +28,14 @@ else
   echo "Certificate generated: $CERT_FILE and $KEY_FILE"
 fi
 
+# Generate HMAC secret if it doesn't exist
+if [ ! -f "hmac_key.pem" ]; then
+    openssl rand -out hmac_key.pem 32 2>/dev/null
+
+    # Protect the HMAC key file
+    chmod 600 hmac_key.pem
+fi
+
 echo ""
 echo "To activate the virtual environment in your terminal, run:"
 echo "source env/bin/activate"
