@@ -26,11 +26,14 @@ def generate_rsa_key_pair():
 
 
 def sign_vote(private_key_content, vote_data):
-    # load the private key
-    private_key = serialization.load_pem_private_key(
-        private_key_content,
-        password=None
-    )
+    # load the private key, and in case it isn a valid format, returns False
+    try:
+        private_key = serialization.load_pem_private_key(
+            private_key_content,
+            password=None
+        )
+    except:
+        return False
 
     # sign the vote data
     signed_vote = private_key.sign(

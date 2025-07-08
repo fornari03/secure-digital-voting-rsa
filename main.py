@@ -128,7 +128,6 @@ def voting_info(voting_id):
 
             # get the content of the private key file as bytes
             private_key_content = file.read()
-            print(f"Private key content: {private_key_content}")
 
             user_id = get_user_by_email(session['user'])['id']
             vote_data = {
@@ -136,20 +135,29 @@ def voting_info(voting_id):
                 'choice': choice,
                 'voting': voting_id
             }
-            signed_vote = sign_vote(private_key_content, vote_data)
-
-            del session['private_key']  # remove private key from session for security reasons
-            del file  # remove file from memory
+            signed_vote = sign_vote(private_key_content, str(vote_data))
+            
             del private_key_content  # remove private key content from memory
+            del file  # remove file from memory
 
-            add_vote(signed_vote, vote_data['choice'], user_id, voting['id'])
+            if signed_vote == False:
+                flash('Formato inválido da chave privada.')
+            else:
+                add_vote(signed_vote, vote_data['choice'], user_id, voting['id'])
         return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
     
     # if the voting is closed, show the results
     for vote in votes:
         # verify if the vote is valid with verify_signature
+        user_id = vote['voter']
         public_key = get_user_by_id(user_id)['public_key']
-        vote['valid'] = verify_signature(vote, public_key, vote_data)
+        vote_data = {
+            'voter': user_id,
+            'choice': vote['choice'],
+            'voting': vote['voting']
+        }
+
+        vote['valid'] = verify_signature(vote['signed_vote'], public_key, str(vote_data))
         vote['voter'] = get_user_by_id(vote['voter'])['email']
     return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
 
