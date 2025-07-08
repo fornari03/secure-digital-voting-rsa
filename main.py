@@ -132,24 +132,39 @@ def voting_info(voting_id):
         if request.method == 'POST':
             choice = request.form['choice']
             file = request.files['private_key_file']
-            filename = secure_filename(file.filename)
-            # TODO: get the content of the private key file
-            # TODO: hash the vote
-            # TODO: sign the hashed vote with the private key
-            # TODO: delete the private key variables for preventing memory leaks
-            vote = {
-                'voter': session['user'],
+
+            # get the content of the private key file as bytes
+            private_key_content = file.read()
+
+            user_id = get_user_by_email(session['user'])['id']
+            vote_data = {
+                'voter': user_id,
                 'choice': choice,
+                'voting': voting_id
             }
-            # TODO: use the actual signed vote instead of this mock
-            add_vote(vote.__hash__, vote['choice'], get_user_by_email(session['user'])['id'], voting['id'])
-            flash('Voto registrado com sucesso!', 'success')
+            signed_vote = sign_vote(private_key_content, str(vote_data))
+            
+            del private_key_content  # remove private key content from memory
+            del file  # remove file from memory
+
+            if signed_vote == False:
+                flash('Formato inválido da chave privada.')
+            else:
+                add_vote(signed_vote, vote_data['choice'], user_id, voting['id'])
         return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
     
     # if the voting is closed, show the results
     for vote in votes:
-        # TODO: verify if the vote is valid using the public key and testing the hash
-        vote['valid'] = True  # mock validation
+        # verify if the vote is valid with verify_signature
+        user_id = vote['voter']
+        public_key = get_user_by_id(user_id)['public_key']
+        vote_data = {
+            'voter': user_id,
+            'choice': vote['choice'],
+            'voting': vote['voting']
+        }
+
+        vote['valid'] = verify_signature(vote['signed_vote'], public_key, str(vote_data))
         vote['voter'] = get_user_by_id(vote['voter'])['email']
     return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
 

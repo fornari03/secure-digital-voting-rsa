@@ -1,5 +1,8 @@
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
+from cryptography.exceptions import InvalidSignature
 
 def generate_rsa_key_pair():
     # generate a new RSA private key
@@ -22,13 +25,38 @@ def generate_rsa_key_pair():
     return private_pem, public_pem
 
 
-def sign_vote(private_key, vote_data):
-    # TODO: implement signing (hash + encrypt) logic
-    pass
+def sign_vote(private_key_content, vote_data):
+    # load the private key, and in case it isn a valid format, returns False
+    try:
+        private_key = serialization.load_pem_private_key(
+            private_key_content,
+            password=None
+        )
+    except:
+        return False
 
-def verify_signature(user_id, signed_data):
-    # TODO: implement signature verification logic
-    pass
+    # sign the vote data
+    signed_vote = private_key.sign(
+        vote_data.encode('utf-8'),
+        padding=padding.PKCS1v15(),
+        algorithm=hashes.SHA256()
+    )
+
+    return signed_vote
+
+def verify_signature(signed_data, public_key_content, original_vote_data):
+    public_key = serialization.load_pem_public_key(public_key_content)
+    try:
+        public_key.verify(
+            signed_data,
+            original_vote_data.encode('utf-8'),
+            padding.PKCS1v15(),
+            hashes.SHA256()
+        )
+        return True
+    except InvalidSignature:
+        return False
+
 
 def generate_jwt(user_id):
     # TODO: implement JWT generation logic
