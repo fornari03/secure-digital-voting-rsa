@@ -1,4 +1,4 @@
-import sqlite3, os, bcrypt
+import sqlite3, bcrypt
 
 
 USERS_DATABASE = 'users.db'

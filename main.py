@@ -1,6 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
-from werkzeug.utils import secure_filename
-import os
 
 from app.auth import *
 from app.repository import get_votings, add_voting, close_voting_by_id, get_voting_by_id, get_user_by_email, get_user_by_id, add_vote, list_votes_by_voting_id, add_jti_to_blacklist, is_blacklisted
