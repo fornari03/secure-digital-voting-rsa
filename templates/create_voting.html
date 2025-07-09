@@ -32,6 +32,21 @@
         <button type="button" onclick="addOption()" class="btn-create">Adicionar candidato</button>
       </div>
       <ul id="options_list" class="mb-4"></ul>
+      <input type="hidden" id="option_count" name="option_count" value="0">
+      <div class="text-danger mb-3" id="option_error" style="display:none;">Adicione pelo menos um candidato.</div>
+      <script>
+        // override form submit to check for at least one option
+        document.forms[0].addEventListener('submit', function(e) {
+          const count = document.querySelectorAll('input[name="options[]"]').length;
+          document.getElementById('option_count').value = count;
+          if (count < 1) {
+        e.preventDefault();
+        document.getElementById('option_error').style.display = 'block';
+          } else {
+        document.getElementById('option_error').style.display = 'none';
+          }
+        });
+      </script>
 
       <div id="email_whitelist" style="display:none;">
         <div class="mb-3 d-flex gap-2">
