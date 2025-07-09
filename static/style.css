@@ -151,3 +151,6 @@ a.link-botao:hover {
 .invalid {
     color: red;
 }
+.ignored {
+    color: rgb(255, 102, 0);
+}

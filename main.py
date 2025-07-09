@@ -181,6 +181,8 @@ def voting_info(voting_id):
         return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
     
     # if the voting is closed, show the results
+    users = set()
+    votes = votes[::-1]  # reverse the votes to show the latest votes first
     for vote in votes:
         # verify if the vote is valid with verify_signature
         user_id = vote['voter']
@@ -193,7 +195,13 @@ def voting_info(voting_id):
 
         vote['valid'] = verify_signature(vote['signed_vote'], public_key, str(vote_data))
         vote['voter'] = get_user_by_id(vote['voter'])['email']
-    return render_template('voting_info.html', voting=voting, votes=votes, authorized=True)
+        if vote['valid'] and not voting['multiple_votes']:
+            if user_id not in users:
+                users.add(user_id)
+            else:
+                vote['valid'] = "i" # ignored, user already voted
+
+    return render_template('voting_info.html', voting=voting, votes=votes[::-1], authorized=True)
 
 
 @app.route('/voting_info/<int:voting_id>/close', methods=['POST'])

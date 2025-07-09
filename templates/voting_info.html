@@ -25,7 +25,7 @@
             <ol class="ps-3">
               {% set ranking = {} %}
               {% for vote in votes %}
-                {% if vote.valid %}
+                {% if vote.valid == True %}
                   {% set _ = ranking.update({vote.choice: ranking.get(vote.choice, 0) + 1}) %}
                 {% endif %}
               {% endfor %}
@@ -41,9 +41,15 @@
               {% for vote in votes %}
                 <li>
                   {{ vote.voter }} - 
-                  <span class="{{ 'valid' if vote.valid else 'invalid' }}">
-                    {{ 'Válido' if vote.valid else 'Inválido' }}
-                  </span>
+                    <span class="{% if vote.valid == True %}valid{% elif vote.valid == 'i' %}ignored{% else %}invalid{% endif %}">
+                    {% if vote.valid == True %}
+                      Válido
+                    {% elif vote.valid == 'i' %}
+                      Ignorado
+                    {% else %}
+                      Inválido
+                    {% endif %}
+                    </span>
                   {% if not voting.anonymous %} - {{ vote.choice }}{% endif %}
                 </li>
               {% endfor %}
