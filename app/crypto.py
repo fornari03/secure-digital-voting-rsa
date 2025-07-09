@@ -5,6 +5,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
 import jwt, time, os
 
+from app.repository import is_blacklisted
 
 def generate_rsa_key_pair():
     # generate a new RSA private key
@@ -84,6 +85,8 @@ def verify_jwt(token):
     # checks if the token is valid and returns the payload if it is, otherwise returns None
     try:
         payload = jwt.decode(token, HMAC_SECRET, algorithms=["HS256"])
+        if is_blacklisted(payload.get('jti')):
+            return None
         return payload
     
     except jwt.ExpiredSignatureError:

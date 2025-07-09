@@ -3,7 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 
 from app.auth import *
-from app.repository import get_votings, add_voting, close_voting_by_id, get_voting_by_id, get_user_by_email, get_user_by_id, add_vote, list_votes_by_voting_id, add_jti_to_blacklist
+from app.repository import get_votings, add_voting, close_voting_by_id, get_voting_by_id, get_user_by_email, get_user_by_id, add_vote, list_votes_by_voting_id, add_jti_to_blacklist, is_blacklisted
 from app.crypto import generate_rsa_key_pair, sign_vote, verify_signature, generate_jwt, verify_jwt, get_jti
 
 app = Flask(__name__)
@@ -23,7 +23,7 @@ def login():
 
         if auth_user(email, password):
             response = redirect(url_for('voting_list'))
-            token = generate_jwt(get_user_by_email(email)['id'])
+            token = generate_jwt(email)
             response.set_cookie('jwt', token, httponly=True, secure=True)
             return response
         flash('Credenciais inválidas.', 'warning')
@@ -34,13 +34,22 @@ def login():
 
 @app.route('/logout')
 def logout():
+    token = request.cookies.get('jwt')
+    if not token:
+        return redirect(url_for('login'))
+    if not verify_jwt(token):
+        flash('Sessão expirada. Por favor, faça login novamente.', 'warning')
+        return redirect(url_for('login'))
+    
     session.clear()
     token = request.cookies.get('jwt')
     jti = get_jti(token)
     if jti is not None:
         add_jti_to_blacklist(jti)
+    response = redirect(url_for('login'))
+    response.delete_cookie('jwt')
     flash('Você saiu da conta com sucesso.', 'info')
-    return redirect(url_for('login'))
+    return response
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -85,6 +94,9 @@ def voting_list():
     token = request.cookies.get('jwt')
     if not token:
         return redirect(url_for('login'))
+    if not verify_jwt(token):
+        flash('Sessão expirada. Por favor, faça login novamente.', 'warning')
+        return redirect(url_for('login'))
 
     
     votings_list = get_votings()
@@ -100,7 +112,13 @@ def create_voting():
     token = request.cookies.get('jwt')
     if not token:
         return redirect(url_for('login'))
-    
+    if not verify_jwt(token):
+        flash('Sessão expirada. Por favor, faça login novamente.', 'warning')
+        return redirect(url_for('login'))
+        
+    payload = verify_jwt(token)
+    user_id = get_user_by_email(payload['sub'])['id']
+
     if request.method == 'POST':
         voting = {
             'name': request.form['voting_name'],
@@ -108,9 +126,9 @@ def create_voting():
             'anonymous': 'anonymous' in request.form,
             'is_private': 'is_private' in request.form,
             'options': request.form.getlist('options[]'),
-            'whitelist': [session['user']] + request.form.getlist('emails[]'),
+            'whitelist': [payload['sub']] + request.form.getlist('emails[]'),
             'status': 'Aberta',
-            'creator': get_user_by_email(session['user'])['id']  # TODO: use JWT to get user info
+            'creator': user_id
         }
         add_voting(voting)
         flash('Votação criada com sucesso!', 'success')
@@ -125,12 +143,15 @@ def voting_info(voting_id):
     token = request.cookies.get('jwt')
     if not token:
         return redirect(url_for('login'))
+    if not verify_jwt(token):
+        flash('Sessão expirada. Por favor, faça login novamente.', 'warning')
+        return redirect(url_for('login'))
     
+    payload = verify_jwt(token)
     voting = get_voting_by_id(voting_id)
     votes = list_votes_by_voting_id(voting_id)
     voting['options'] = voting['options'].split(',') # HACK: it's a string in the database, so we need to convert it to a list
-    authorized = not voting['is_private'] or session['user'] in voting['whitelist']
-    # TODO: verify with JWT if the user is authorized to vote
+    authorized = not voting['is_private'] or payload['sub'] in voting['whitelist']
     if not authorized:
         flash('Você não está autorizado a ver essa votação privada.', 'warning')
         return render_template('voting_info.html', voting=voting, votes=votes, authorized=False)
@@ -144,7 +165,7 @@ def voting_info(voting_id):
             # get the content of the private key file as bytes
             private_key_content = file.read()
 
-            user_id = get_user_by_email(session['user'])['id']
+            user_id = get_user_by_email(payload['sub'])['id']
             vote_data = {
                 'voter': user_id,
                 'choice': choice,
@@ -182,9 +203,13 @@ def close_voting(voting_id):
     token = request.cookies.get('jwt')
     if not token:
         return redirect(url_for('login'))
+    if not verify_jwt(token):
+        flash('Sessão expirada. Por favor, faça login novamente.', 'warning')
+        return redirect(url_for('login'))
     
-    # TODO: verify if the user is the creator of the voting
-    if get_user_by_email(session['user'])['id'] == get_voting_by_id(voting_id)['creator']:
+    payload = verify_jwt(token)
+    user_id = get_user_by_email(payload['sub'])['id']
+    if user_id == get_voting_by_id(voting_id)['creator']:
         close_voting_by_id(voting_id)
         flash('Votação encerrada com sucesso.', 'success')
         return redirect(url_for('voting_info', voting_id=voting_id))
