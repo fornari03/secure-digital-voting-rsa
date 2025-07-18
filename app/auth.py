@@ -1,9 +1,9 @@
 from .repository import verify_user, add_user
 
 def auth_user(login_username, login_password):
-    # verifica se as credenciais do usuário estão corretas
+    # verify if the user's credentials are correct
     return verify_user(login_username, login_password)
 
 def register_user(login_username, login_email, login_password, public_key):
-    # adiciona o novo usuário caso ele não exista
+    # add a new user if it does not exist
     return add_user(login_username, login_email, login_password, public_key)

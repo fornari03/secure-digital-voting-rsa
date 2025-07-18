@@ -19,6 +19,7 @@ def login():
         email = request.form['email']
         password = request.form['password']
 
+        # authenticate user
         if auth_user(email, password):
             response = redirect(url_for('voting_list'))
             token = generate_jwt(email)
@@ -32,6 +33,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    # test the token's validity
     token = request.cookies.get('jwt')
     if not token:
         return redirect(url_for('login'))
@@ -39,6 +41,7 @@ def logout():
         flash('Sessão expirada. Por favor, faça login novamente.', 'warning')
         return redirect(url_for('login'))
     
+    # clear session, delete cookie and blacklist the token's jti
     session.clear()
     token = request.cookies.get('jwt')
     jti = get_jti(token)
@@ -76,6 +79,7 @@ def download_private_key():
     if 'private_key' not in session:
         return redirect(url_for('login'))
     
+    # get and remove the private key from 'session'
     private_key = session.pop('private_key')
 
     return Response(
@@ -89,6 +93,7 @@ def download_private_key():
 
 @app.route('/voting_list', methods=['GET'])
 def voting_list():
+    # test the token's validity
     token = request.cookies.get('jwt')
     if not token:
         return redirect(url_for('login'))
@@ -107,6 +112,7 @@ def voting_list():
 
 @app.route('/create_voting', methods=['GET', 'POST'])
 def create_voting():
+    # test the token's validity
     token = request.cookies.get('jwt')
     if not token:
         return redirect(url_for('login'))
@@ -118,6 +124,7 @@ def create_voting():
     user_id = get_user_by_email(payload['sub'])['id']
 
     if request.method == 'POST':
+        # create a new voting
         voting = {
             'name': request.form['voting_name'],
             'multiple_votes': 'multiple_votes' in request.form,
@@ -130,7 +137,7 @@ def create_voting():
         }
         add_voting(voting)
         flash('Votação criada com sucesso!', 'success')
-        return redirect(url_for('voting_list'))
+        return redirect(url_for('voting_list')) # go back to voting list
     
     # GET
     return render_template('create_voting.html')
@@ -138,6 +145,7 @@ def create_voting():
 
 @app.route('/voting_info/<int:voting_id>', methods=['GET', 'POST'])
 def voting_info(voting_id):
+    # test the token's validity
     token = request.cookies.get('jwt')
     if not token:
         return redirect(url_for('login'))
@@ -206,6 +214,7 @@ def voting_info(voting_id):
 
 @app.route('/voting_info/<int:voting_id>/close', methods=['POST'])
 def close_voting(voting_id):
+    # test token's validity
     token = request.cookies.get('jwt')
     if not token:
         return redirect(url_for('login'))
@@ -216,6 +225,7 @@ def close_voting(voting_id):
     payload = verify_jwt(token)
     user_id = get_user_by_email(payload['sub'])['id']
     if user_id == get_voting_by_id(voting_id)['creator']:
+        # if the user is the creator of the voting, close it
         close_voting_by_id(voting_id)
         flash('Votação encerrada com sucesso.', 'success')
         return redirect(url_for('voting_info', voting_id=voting_id))
